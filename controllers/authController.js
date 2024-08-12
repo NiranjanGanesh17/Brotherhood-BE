@@ -88,6 +88,6 @@ export const discordRedirectAuth = async (req, res) => {
 };
 
 export const getUser = async (req, res) => {
-  res.setHeader('Access-Control-Allow-Credentials', true);
-    res.send(req.user);
+    const getUser = await User.find({userId:req.user.userId})
+    res.send(getUser);
 };

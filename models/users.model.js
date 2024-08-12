@@ -4,6 +4,7 @@ const userSchema = new mongoose.Schema({
     userId: { type: String, required: true },
     userName:{type: String},
     avatar:{type:String,required:true},
+    visibility:{type:Boolean,default:true},
     globalName:{type:String,required:true},
     email:{type:String,required:true,unique:true},
     locationId: { 
