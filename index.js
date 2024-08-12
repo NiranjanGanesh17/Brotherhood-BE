@@ -3,6 +3,7 @@ import dotenv from 'dotenv'
 import mongoose from 'mongoose';
 import locations from './routes/locations.js'
 import discordAuth from './routes/discordAuth.js'
+import usersRoute from './routes/users.js'
 import http from 'http';
 import cookieParser from 'cookie-parser';
 import cors from 'cors';
@@ -35,7 +36,7 @@ app.use(express.json());
 
 app.use('/api/location',locations)
 app.use('/api/auth',discordAuth)
-
+app.use('/api/user',usersRoute)
 
 app.get('/', (req, res) => {
     res.send('Hello World!');
