@@ -2,25 +2,41 @@ import express from 'express'
 import dotenv from 'dotenv'
 import mongoose from 'mongoose';
 import locations from './routes/locations.js'
+import discordAuth from './routes/discordAuth.js'
 import http from 'http';
+import cookieParser from 'cookie-parser';
 import cors from 'cors';
 import { Server } from 'socket.io';
 
 dotenv.config();
 const app = express()
 const server = http.createServer(app);
+app.use(cookieParser());
+
+
+app.use(cors({
+    
+        origin: 'http://localhost:3001',
+        credentials: true,
+      },
+));
+
 const io = new Server(server,{
     cors: {
-        origin: 'http://localhost:3000',
-        methods: ['GET', 'POST'],
+        origin: 'http://localhost:3001',
+        credentials: true,
       },
 });
 
-app.use(cors());
-const port = 3001
+const port = 3000
 app.set('socketio', io);
 app.use(express.json());
+
+
 app.use('/api/location',locations)
+app.use('/api/auth',discordAuth)
+
+
 app.get('/', (req, res) => {
     res.send('Hello World!');
   });
