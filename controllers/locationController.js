@@ -1,5 +1,6 @@
 import Location from '../models/location.model.js';
 
+
 export const createNewLocation =async (req,res)=>{
     const { userId, latitude, longitude } = req.body;
 
@@ -9,7 +10,6 @@ export const createNewLocation =async (req,res)=>{
           { latitude, longitude, timestamp: new Date() },
           { upsert: true, new: true }
         );
-        // Notify other clients about the new location
         const io = req.app.get('socketio');
         if (io) {
           io.emit('locationUpdate', { userId, latitude, longitude });

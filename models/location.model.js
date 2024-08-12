@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const locationSchema = new mongoose.Schema({
-    userId: { type: String, required: true },
+    userId: { type: String, required: true,unique:true },
     latitude: { type: Number, required: true },
     longitude: { type: Number, required: true },
     timestamp: { type: Date, default: Date.now },
