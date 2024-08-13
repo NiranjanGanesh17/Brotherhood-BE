@@ -58,7 +58,32 @@ export const LocationVisibilityToggle=async(req,res)=>{
 
 export const getAllLocations= async(req,res)=>{
         try {
-          const locations = await Location.find();
+        //   const locations = await Location.find();
+        const locations = await Location.aggregate([
+            {
+              $lookup: {
+                from: 'users', 
+                localField: 'userId', 
+                foreignField: 'userId', 
+                as: 'userInfo', 
+              },
+            },
+            {
+              $unwind: '$userInfo',
+            },
+            {
+              $project: {
+                _id: 1,
+                userId: 1, 
+                latitude: 1, 
+                longitude: 1, 
+                timestamp: 1,
+                visibility: 1, 
+                avatar: '$userInfo.avatar', 
+                userName: '$userInfo.globalName',
+              },
+            },
+          ]);
           res.status(200).json(locations);
         } catch (error) {
           res.status(500).send('Error fetching locations');
