@@ -44,17 +44,58 @@ export const discordRedirectAuth = async (req, res) => {
     );
 
     const userData = userResponse.data;
+
+    async function fetchAvatar(userId, avatarHash) {
+        const avatarUrl = `https://cdn.discordapp.com/avatars/${userId}/${avatarHash}.png?size=512`;
+        
+        try {
+            // Fetch the avatar image
+            const response = await axios.get(avatarUrl, { responseType: 'arraybuffer' });
+            const imageBuffer = Buffer.from(response.data, 'binary');
+            return imageBuffer;
+        } catch (error) {
+            console.error('Error fetching avatar:', error);
+            return null;
+        }
+    }
+
+    async function uploadToImgur(imageBuffer) {
+        const imgurUrl = 'https://api.imgur.com/3/image';
+        
+        try {
+            const response = await axios.post(imgurUrl, imageBuffer, {
+                headers: {
+                    Authorization: `Client-ID ${process.env.IMGUR_CLIENTID}`,
+                    'Content-Type': 'application/octet-stream'
+                }
+            });
+            return response.data.data.link;
+        } catch (error) {
+            console.error('Error uploading to Imgur:', error);
+            return null;
+        }
+    }
+   
     let user = await User.findOne({ userId: userData.id });
+    let userAvatar
+    const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
+    if (imageBuffer) {
+        userAvatar = await uploadToImgur(imageBuffer);
+        
+    } else {
+        userAvatar=userData.avatar
+        console.error('Failed to fetch Discord avatar.');
+    }
     if (user) {
         user.email = userData.email;
-        user.avatar = userData.avatar;
+        user.avatar=userAvatar?userAvatar:userData.avatar;
         user.globalName = userData.global_name;
         await user.save();
       } else {
         user = new User({
           userId: userData.id,
           email: userData.email,
-          avatar: userData.avatar,
+          avatar: userAvatar?userAvatar:userData.avatar,
           globalName: userData.global_name,
         });
         await user.save();
