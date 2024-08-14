@@ -115,6 +115,7 @@ export const discordRedirectAuth = async (req, res) => {
     res.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
+      sameSite: 'None',
       maxAge: 4 * 60 * 60 * 1000,
     });
     res.redirect(`${process.env.CLIENT_ENDPOINT}`);
