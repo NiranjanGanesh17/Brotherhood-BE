@@ -122,6 +122,7 @@ export const discordRedirectAuth = async (req, res) => {
       secure: process.env.NODE_ENV === "production",
       sameSite: 'None',
       maxAge: 4 * 60 * 60 * 1000,
+      path: '/',
     });
     res.redirect(`${process.env.CLIENT_ENDPOINT}`);
     // res.json(user);
