@@ -72,7 +72,7 @@ export const discordRedirectAuth = async (req, res) => {
             return response.data.data.link;
         } catch (error) {
             console.error('Error uploading to Imgur:', error);
-            return null;
+            return '';
         }
     }
    
