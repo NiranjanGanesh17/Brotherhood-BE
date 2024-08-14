@@ -78,14 +78,17 @@ export const discordRedirectAuth = async (req, res) => {
    
     let user = await User.findOne({ userId: userData.id });
     let userAvatar
-    const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
-    if (imageBuffer) {
-        userAvatar = await uploadToImgur(imageBuffer);
-        
-    } else {
-        userAvatar=userData.avatar
-        console.error('Failed to fetch Discord avatar.');
+    if(userData.avatar){
+        const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
+        if (imageBuffer) {
+            userAvatar = await uploadToImgur(imageBuffer);
+            
+        } else {
+            userAvatar=userData.avatar
+            console.error('Failed to fetch Discord avatar.');
+        }
     }
+  
     if (user) {
         user.email = userData.email;
         // user.avatar=userAvatar?userAvatar:userData.avatar||"";
