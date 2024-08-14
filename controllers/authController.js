@@ -88,14 +88,16 @@ export const discordRedirectAuth = async (req, res) => {
     }
     if (user) {
         user.email = userData.email;
-        user.avatar=userAvatar?userAvatar:userData.avatar||"";
+        // user.avatar=userAvatar?userAvatar:userData.avatar||"";
+        user.avatar='';
         user.globalName = userData.global_name;
         await user.save();
       } else {
         user = new User({
           userId: userData.id,
           email: userData.email,
-          avatar: userAvatar?userAvatar:userData.avatar||"",
+          avatar:'',
+        //   avatar: userAvatar?userAvatar:userData.avatar||"",
           globalName: userData.global_name,
         });
         await user.save();
@@ -106,7 +108,7 @@ export const discordRedirectAuth = async (req, res) => {
       {
         userId: userData.id,
         email: userData.email,
-        avatar: userData.avatar,
+        avatar: userData.avatar||'',
         globalName: userData.global_name,
       },
       process.env.JWT_SECRET,
