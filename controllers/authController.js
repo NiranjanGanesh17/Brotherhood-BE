@@ -4,6 +4,7 @@ import qs from "qs";
 import jwt from "jsonwebtoken";
 
 export const discordAuth = (req, res) => {
+    console.log('disc')
   const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${
     process.env.DISCORD_CLIENT_ID
   }&redirect_uri=${encodeURIComponent(
@@ -13,7 +14,9 @@ export const discordAuth = (req, res) => {
 };
 
 export const discordRedirectAuth = async (req, res) => {
+console.log('redirec disc')
   try {
+    
     const code = req.query.code;
 
     const tokenResponse = await axios.post(
