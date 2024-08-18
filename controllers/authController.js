@@ -136,7 +136,7 @@ async function uploadToCloudinary(imageBuffer) {
   
     if (user) {
         user.email = userData.email;
-        user.avatar=userAvatar?userAvatar:userData.avatar||"";
+        user.avatar=user.avatar?user.avatar:userAvatar?userAvatar:userData.avatar||"";
         // user.avatar='';
         user.globalName = userData.global_name;
         await user.save();
