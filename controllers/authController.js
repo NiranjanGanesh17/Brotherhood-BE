@@ -181,6 +181,36 @@ async function uploadToCloudinary(imageBuffer) {
 };
 
 export const getUser = async (req, res) => {
-    const getUser = await User.find({userId:req.user.userId})
+    const getUser = await User.aggregate([
+      {
+        $match: {
+          userId: req.user.userId
+        }
+      },
+      {
+        $lookup: {
+          from: "locations", 
+          localField: "userId", 
+          foreignField: "userId", 
+          as: "locations"
+        }
+      },
+      {
+        $unwind: {
+          path: "$locations",
+          preserveNullAndEmptyArrays: true 
+        }
+      },
+      {
+        $project: {
+          _id: 1,
+          userId: 1,
+          email: 1,
+          avatar: 1,
+          globalName: 1,
+          visibility: "$locations.visibility"
+        }
+      }
+    ]);
     res.send(getUser);
 };
