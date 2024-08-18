@@ -2,10 +2,11 @@ import User from "../models/users.model.js";
 import axios from "axios";
 import qs from "qs";
 import jwt from "jsonwebtoken";
+import stream from 'stream';
+import cloudinary from '../cloudinary.config.js';
 
 export const discordAuth = (req, res) => {
-    console.log('disc')
-  const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${
+    const discordAuthUrl = `https://discord.com/api/oauth2/authorize?client_id=${
     process.env.DISCORD_CLIENT_ID
   }&redirect_uri=${encodeURIComponent(
     process.env.DISCORD_REDIRECT_URI
@@ -62,29 +63,70 @@ console.log('redirec disc')
         }
     }
 
-    async function uploadToImgur(imageBuffer) {
-        const imgurUrl = 'https://api.imgur.com/3/image';
+//     async function uploadToImgur(imageBuffer) {
+//         const imgurUrl = 'https://api.imgur.com/3/image';
         
-        try {
-            const response = await axios.post(imgurUrl, imageBuffer, {
-                headers: {
-                    Authorization: `Client-ID ${process.env.IMGUR_CLIENTID}`,
-                    'Content-Type': 'application/octet-stream'
-                }
-            });
-            return response.data.data.link;
-        } catch (error) {
-            console.error('Error uploading to Imgur:', error);
-            return '';
-        }
-    }
+//         try {
+
+// const instance = axios.create({
+//   baseURL: 'https://api.imgur.com/3/',
+//   timeout: 10000,  // 10 seconds
+// });
+//  const response =await instance.post(imgurUrl, imageBuffer,
+//   {
+//     headers: {
+//         Authorization: `Client-ID ${process.env.IMGUR_CLIENTID}`,
+//         'Content-Type': 'application/octet-stream'
+//     }
+// })
+//             // const response = await axios.post(imgurUrl, imageBuffer, {
+//             //     headers: {
+//             //         Authorization: `Client-ID ${process.env.IMGUR_CLIENTID}`,
+//             //         'Content-Type': 'application/octet-stream'
+//             //     }
+//             // });
+//             // console.log(response,'respo')
+//             return response.data.data.link;
+//         } catch (error) {
+//             console.error('Error uploading to Imgur:', error);
+//             return '';
+//         }
+//     }
    
+
+async function uploadToCloudinary(imageBuffer) {
+  try {
+    return new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'discord_avatars' },
+        (error, result) => {
+          if (error) {
+            console.error('Error uploading to Cloudinary:', error);
+            reject(error);
+          } else {
+            resolve(result.secure_url);
+          }
+        }
+      );
+
+      const bufferStream = new stream.PassThrough();
+      bufferStream.end(imageBuffer);
+      bufferStream.pipe(uploadStream);
+      return uploadStream
+    });
+  } catch (error) {
+    console.error('Error uploading image to Cloudinary:', error);
+    return 'https://res.cloudinary.com/dao9osuwj/image/upload/v1723979986/discord_avatars/rdkuf62szqkxegb78lsq.png';
+  }
+}
+
+
     let user = await User.findOne({ userId: userData.id });
     let userAvatar
     if(userData.avatar){
         const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
         if (imageBuffer) {
-            userAvatar = await uploadToImgur(imageBuffer);
+            userAvatar = await uploadToCloudinary(imageBuffer);
             
         } else {
             userAvatar=userData.avatar
@@ -94,16 +136,16 @@ console.log('redirec disc')
   
     if (user) {
         user.email = userData.email;
-        // user.avatar=userAvatar?userAvatar:userData.avatar||"";
-        user.avatar='';
+        user.avatar=userAvatar?userAvatar:userData.avatar||"";
+        // user.avatar='';
         user.globalName = userData.global_name;
         await user.save();
       } else {
         user = new User({
           userId: userData.id,
           email: userData.email,
-          avatar:'',
-        //   avatar: userAvatar?userAvatar:userData.avatar||"",
+          // avatar:'',
+          avatar: userAvatar?userAvatar:userData.avatar||"",
           globalName: userData.global_name,
         });
         await user.save();
