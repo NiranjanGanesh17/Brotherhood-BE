@@ -123,7 +123,7 @@ async function uploadToCloudinary(imageBuffer) {
 
     let user = await User.findOne({ userId: userData.id });
     let userAvatar
-    if(userData.avatar){
+    if(!user||!user.avatar && userData.avatar){
         const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
         if (imageBuffer) {
             userAvatar = await uploadToCloudinary(imageBuffer);
