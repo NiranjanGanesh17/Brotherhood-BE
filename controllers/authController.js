@@ -37,7 +37,7 @@ console.log('redirec disc')
     );
 
     const accessToken = tokenResponse.data.access_token;
-
+   let  cloudinaryId
     const userResponse = await axios.get(
       "https://discord.com/api/v10/users/@me",
       {
@@ -62,36 +62,6 @@ console.log('redirec disc')
             return null;
         }
     }
-
-//     async function uploadToImgur(imageBuffer) {
-//         const imgurUrl = 'https://api.imgur.com/3/image';
-        
-//         try {
-
-// const instance = axios.create({
-//   baseURL: 'https://api.imgur.com/3/',
-//   timeout: 10000,  // 10 seconds
-// });
-//  const response =await instance.post(imgurUrl, imageBuffer,
-//   {
-//     headers: {
-//         Authorization: `Client-ID ${process.env.IMGUR_CLIENTID}`,
-//         'Content-Type': 'application/octet-stream'
-//     }
-// })
-//             // const response = await axios.post(imgurUrl, imageBuffer, {
-//             //     headers: {
-//             //         Authorization: `Client-ID ${process.env.IMGUR_CLIENTID}`,
-//             //         'Content-Type': 'application/octet-stream'
-//             //     }
-//             // });
-//             // console.log(response,'respo')
-//             return response.data.data.link;
-//         } catch (error) {
-//             console.error('Error uploading to Imgur:', error);
-//             return '';
-//         }
-//     }
    
 
 async function uploadToCloudinary(imageBuffer) {
@@ -104,7 +74,7 @@ async function uploadToCloudinary(imageBuffer) {
             console.error('Error uploading to Cloudinary:', error);
             reject(error);
           } else {
-            resolve(result.secure_url);
+            resolve({url:result.secure_url,publicId: result.public_id});
           }
         }
       );
@@ -120,31 +90,61 @@ async function uploadToCloudinary(imageBuffer) {
   }
 }
 
+async function deleteFromCloudinary(publicId) {
+  try {
+    await cloudinary.uploader.destroy(publicId);
+    console.log('Old image deleted from Cloudinary:', publicId);
+  } catch (error) {
+    console.error('Error deleting old image from Cloudinary:', error);
+  }
+}
+
 
     let user = await User.findOne({ userId: userData.id });
     let userAvatar
-    if(!user||!user.avatar && userData.avatar){
+    let userAvatarHash
+    if(user && user.avatarHash!==userData.avatar){
+        userAvatarHash=userData.avatar
         const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
         if (imageBuffer) {
-            userAvatar = await uploadToCloudinary(imageBuffer);
+            let {url,publicId} = await uploadToCloudinary(imageBuffer);
+
+            userAvatar=url
+            cloudinaryId=publicId
+            if (user.cloudinaryId) {
+              await deleteFromCloudinary(user.cloudinaryId);
+            }
             
         } else {
             userAvatar=userData.avatar
             console.error('Failed to fetch Discord avatar.');
         }
     }
-  
+    else if(!user){
+      const imageBuffer = await fetchAvatar(userData.id, userData.avatar);
+      if (imageBuffer) {
+          let {url,publicId} = await uploadToCloudinary(imageBuffer);
+          userAvatarHash=userData.avatar
+          userAvatar=url
+          cloudinaryId=publicId
+      } else {
+          userAvatar=userData.avatar
+          console.error('Failed to fetch Discord avatar.');
+      }
+    }
     if (user) {
         user.email = userData.email;
-        user.avatar=user.avatar?user.avatar:userAvatar?userAvatar:userData.avatar||"";
-        // user.avatar='';
+        user.avatar=userAvatar?userAvatar:user.avatar||"";
+        user.avatarHash=userAvatarHash?userAvatarHash:user.avatarHash||""
+        user.cloudinaryId=cloudinaryId
         user.globalName = userData.global_name;
         await user.save();
       } else {
         user = new User({
           userId: userData.id,
           email: userData.email,
-          // avatar:'',
+          avatarHash:userAvatarHash?userAvatarHash:'',
+          cloudinaryId:cloudinaryId?cloudinaryId:'',
           avatar: userAvatar?userAvatar:userData.avatar||"",
           globalName: userData.global_name,
         });
@@ -162,6 +162,7 @@ async function uploadToCloudinary(imageBuffer) {
       process.env.JWT_SECRET,
       { expiresIn: "4h" }
     );
+    
     res.cookie("auth_token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
@@ -169,7 +170,8 @@ async function uploadToCloudinary(imageBuffer) {
       maxAge: 4 * 60 * 60 * 1000,
       path: '/',
     });
-    res.redirect(`${process.env.CLIENT_ENDPOINT}`);
+    res.redirect(`${process.env.CLIENT_ENDPOINT}/`);
+    console.log(user,token)
     // res.json(user);
   } catch (error) {
     console.error(
